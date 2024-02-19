@@ -8,7 +8,7 @@ const ExpressError = require('./utils/ExpressError');
 const methodOverride = require('method-override');
 const ejsMate = require('ejs-mate');
 const { send } = require('process');
-const {campgroundSchema}=require('./schemas');
+const {campgroundSchema, reviewSchema }=require('./schemas');
 
 
 const app=express();
@@ -29,6 +29,17 @@ app.use(methodOverride('_method'));
 const validateCampground=(req,res,next)=>{
     const {error} = campgroundSchema.validate(req.body);
     console.log(error);
+    if(error){
+      const msg=error.details.map(el=>el.message).join(',');
+      throw new ExpressError(msg,400);
+    }  else{
+      next(); 
+    }
+}
+
+const validateReview=(req,res,next)=>{
+  const {error}= reviewSchema.validate(req.body);
+  console.log(error);
     if(error){
       const msg=error.details.map(el=>el.message).join(',');
       throw new ExpressError(msg,400);
@@ -78,7 +89,7 @@ app.delete('/campgrounds/:id',catchAsync(async(req,res)=>{
   res.redirect('/campgrounds');
 }))
 
-app.post('/campgrounds/:id/reviews',catchAsync(async(req,res)=>{
+app.post('/campgrounds/:id/reviews', validateReview ,catchAsync(async(req,res)=>{
   const campground=await Campgroud.findById(req.params.id);
   const review= new Review(req.body.review);
   campground.reviews.push(review);
@@ -90,6 +101,7 @@ app.post('/campgrounds/:id/reviews',catchAsync(async(req,res)=>{
 app.all('*',(req,res,next)=>{
   next(new ExpressError('Page Not Found',404));
 })
+
 app.use((err,req,res,next)=>{
   const {statusCode=500}=err;
   if(!err.message)
@@ -97,7 +109,8 @@ app.use((err,req,res,next)=>{
     err.message='Oops!!! Something Went Wrong';
   }
   res.status(statusCode).render('error',{err});
-})
+}) 
+
 app.listen(3000,()=>{
   console.log('Serving on port 3000');
 })
