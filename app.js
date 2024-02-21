@@ -5,16 +5,17 @@ const ExpressError = require('./utils/ExpressError');
 const methodOverride = require('method-override');
 const ejsMate = require('ejs-mate');
 const { send } = require('process');
-const campgroundsRoutes=require('./routers/campgrounds');
-const reviewsRoutes=require('./routers/reviews');
-const session=require('express-session');
+const session = require('express-session');
 const flash = require('connect-flash');
 const passport=require('passport');
 const localStrategy=require('passport-local');
 const User=require('./models/user');
+
+const campgroundsRoutes = require('./routers/campgrounds');
+const reviewsRoutes = require('./routers/reviews');
 const usersRoutes=require('./routers/users');
 
-const app=express();
+
 mongoose.connect('mongodb://localhost:27017/yelp-camp');
 
 const db=mongoose.connection;
@@ -23,11 +24,15 @@ db.once("open",()=>{
   console.log("Database Connected");
 });
 
+const app=express();
+
 app.engine('ejs',ejsMate);
 app.set('view engine','ejs');
 app.set('views',path.join(__dirname,'views'));
+
 app.use(express.urlencoded({extended:true}));
 app.use(methodOverride('_method'));
+app.use(express.static(path.join(__dirname,'public')));
 
 const sessionConfig={
   secret:'secret',
@@ -42,23 +47,29 @@ const sessionConfig={
 
 app.use(session(sessionConfig));
 app.use(flash());
+
 app.use(passport.initialize());
 app.use(passport.session());
-passport.use(new localStrategy(User.authenticate));
+passport.use(new localStrategy(User.authenticate()));
+
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
-
 app.use((req,res,next)=>{
+  if (!['/login', '/register', '/'].includes(req.originalUrl))
+   {
+    console.log(req.originalUrl);
+    req.session.returnTo = req.originalUrl;
+   }
+  res.locals.currentUser=req.user;
   res.locals.success = req.flash('success');
   res.locals.error = req.flash('error');
   next();
 })
 
+app.use('/',usersRoutes);
 app.use('/campgrounds',campgroundsRoutes);
 app.use('/campgrounds/:id/reviews',reviewsRoutes);
-app.use('/',usersRoutes);
-app.use(express.static(path.join(__dirname,'public')));
 
 app.get('/',(req,res)=>{
   res.render('home');
