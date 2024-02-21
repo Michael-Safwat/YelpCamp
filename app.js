@@ -9,6 +9,10 @@ const campgroundsRoutes=require('./routers/campgrounds');
 const reviewsRoutes=require('./routers/reviews');
 const session=require('express-session');
 const flash = require('connect-flash');
+const passport=require('passport');
+const localStrategy=require('passport-local');
+const User=require('./models/user');
+const usersRoutes=require('./routers/users');
 
 const app=express();
 mongoose.connect('mongodb://localhost:27017/yelp-camp');
@@ -35,8 +39,15 @@ const sessionConfig={
     maxAge:1000*60*60*24*7
   }
 }
+
 app.use(session(sessionConfig));
 app.use(flash());
+app.use(passport.initialize());
+app.use(passport.session());
+passport.use(new localStrategy(User.authenticate));
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
+
 
 app.use((req,res,next)=>{
   res.locals.success = req.flash('success');
@@ -46,6 +57,7 @@ app.use((req,res,next)=>{
 
 app.use('/campgrounds',campgroundsRoutes);
 app.use('/campgrounds/:id/reviews',reviewsRoutes);
+app.use('/',usersRoutes);
 app.use(express.static(path.join(__dirname,'public')));
 
 app.get('/',(req,res)=>{
