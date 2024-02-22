@@ -1,10 +1,11 @@
 const  mongoose = require('mongoose');
 const cities=require('./cities');
 const {places,descriptors}=require('./seedHelpers');
-const Campgroud=require('../models/campground');
+const Campground=require('../models/campground');
 
 mongoose.connect('mongodb://localhost:27017/yelp-camp');
 const db=mongoose.connection;
+
 db.on("error",console.error.bind(console,"Connection Error"));
 db.once("open",()=>{
   console.log("Database Connected");
@@ -12,23 +13,23 @@ db.once("open",()=>{
 
 const sample= arr =>arr[Math.floor(Math.random()*arr.length)];
 
-const seedDB=async()=>{
-  await Campgroud.deleteMany({});
-  for(let i=0;i<50;i++)
-  {
-    const random1000=Math.floor(Math.random()*1001);
-    const price=Math.floor(Math.random()*20+10);  
-    const camp=new Campgroud({
-      location:`${cities[random1000].city},${cities[random1000].state}`,
-      title:`${sample(descriptors)} ${sample(places)}`,
-      image:'https://source.unsplash.com/collection/483251',
-      description:'  Lorem ipsum dolor sit, amet consectetur adipisicing elit. Ipsa pariatur aut voluptatum vitae suscipit natus adipisci nisi sapiente velit at quas, repudiandae dolorum! Unde rem repellat quibusdam ullam quo aliquam.',
-      price
-    })
-    await camp.save;
+const seedDB = async () => {
+  await Campground.deleteMany({});
+  for (let i = 0; i < 50; i++) {
+      const random1000 = Math.floor(Math.random() * 1000);
+      const price = Math.floor(Math.random() * 20) + 10;
+      const camp = new Campground({
+          author: '65d6492bfc7924b35583df5a',
+          location: `${cities[random1000].city}, ${cities[random1000].state}`,
+          title: `${sample(descriptors)} ${sample(places)}`,
+          image: 'https://source.unsplash.com/collection/483251',
+          description: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Quibusdam dolores vero perferendis laudantium, consequuntur voluptatibus nulla architecto, sit soluta esse iure sed labore ipsam a cum nihil atque molestiae deserunt!',
+          price
+      })
+      await camp.save();
   }
 }
 
-seedDB().then(()=>{
+seedDB().then(() => {
   mongoose.connection.close();
 })
